@@ -39,7 +39,7 @@ namespace Sitecore.SharedSource.DataImporter.Utility
                 Match m = r.Match(strArr[z]);
 
 				//if it's not a guid, empty, or starts with an asterisk
-				if ((strArr[z].Contains("-") || (strArr[z].StartsWith("0")) || strArr[z].Split(' ').Intersect(EscapeWords).Any()) && !m.Success)
+				if ((strArr[z].Contains("-") || (strArr[z].StartsWith("0")) || strArr[z].Split(' ').Intersect(EscapeWords).Any()) && (!m.Success && !IsFieldQuery(strArr[z])))
 				{
                     strArr[z] = "#" + strArr[z] + "#";
                 }
@@ -47,6 +47,11 @@ namespace Sitecore.SharedSource.DataImporter.Utility
             scQuery = string.Join("/", strArr);
 
             return scQuery;
+        }
+
+        private static bool IsFieldQuery(string query)
+        {
+            return query.StartsWith("*[") && query.EndsWith("]");
         }
 
         /// <summary>
