@@ -179,6 +179,13 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 			var items = new List<object>();
 			foreach (var query in Query.Split(new string[] { Environment.NewLine },StringSplitOptions.RemoveEmptyEntries))
 			{
+				Guid id;
+				if (Guid.TryParse(query, out id))
+				{
+					Logger.Log("SitecoreDataMap.GetImportData", string.Format("Adding item: {0}", id));
+					items.Add(FromDB.GetItem(new ID(id)));
+					continue;
+				}
 				var cleanQuery = StringUtility.CleanXPath(query);
 				Logger.Log("SitecoreDataMap.GetImportData", string.Format("Running query: {0}", cleanQuery));
 				items.AddRange(FromDB.SelectItems(cleanQuery));
