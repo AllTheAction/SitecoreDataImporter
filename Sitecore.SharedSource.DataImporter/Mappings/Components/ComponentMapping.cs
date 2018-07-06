@@ -8,10 +8,12 @@ using Sitecore.SharedSource.DataImporter.Extensions;
 using Sitecore.SharedSource.DataImporter.Mappings.Fields;
 using Sitecore.SharedSource.DataImporter.Mappings.Properties;
 using Sitecore.SharedSource.DataImporter.Utility;
-using log4net;
+using Sitecore.Data;
+using Sitecore.SharedSource.DataImporter.Mappings.Templates;
 using Sitecore.SharedSource.DataImporter.Logger;
+using Sitecore.SharedSource.DataImporter.Providers;
 
-namespace Sitecore.SharedSource.DataImporter.Mappings.Templates {
+namespace Sitecore.SharedSource.DataImporter.Mappings.Components {
 	public class ComponentMapping {
 
 		#region Properties
@@ -50,11 +52,12 @@ namespace Sitecore.SharedSource.DataImporter.Mappings.Templates {
 		public IEnumerable<ComponentMapping> ComponentMappingDefinitions { get; set; }
 
 		public Dictionary<string,TemplateMapping> TemplateMappingDefinitions { get; set; }
+		public TemplateID ComponentFolderTemplateID { get; set; }
 
-		/// <summary>
-		/// List of properties
-		/// </summary>
-		public List<IBaseProperty> PropertyDefinitions { get; set; }
+        /// <summary>
+        /// List of properties
+        /// </summary>
+        public List<IBaseProperty> PropertyDefinitions { get; set; }
 		public string Query { get; set; }
 		public string Rendering { get; set; }
 		public bool PreserveComponentId { get; set; }
@@ -63,9 +66,9 @@ namespace Sitecore.SharedSource.DataImporter.Mappings.Templates {
         
 		#endregion
 
-		//constructor
-		public ComponentMapping(Item i, ILogger logger) {
-			FromWhatTemplate = i.Fields["From What Template"].Value;
+        //constructor
+        public ComponentMapping(Item i, ILogger logger) {
+            FromWhatTemplate = i.Fields["From What Template"].Value;
 			ToWhatTemplate = i.Fields["To What Template"].Value;
             ComponentName = i.Fields["Component Name"].Value;
 			FolderName = i.Fields["Folder Name"].Value;
@@ -74,10 +77,11 @@ namespace Sitecore.SharedSource.DataImporter.Mappings.Templates {
 			Query = i.Fields["Query"].Value;
 			PreserveComponentId = i.GetItemBool("Preseve Component ID");
 			Placeholder = i.Fields["Placeholder"].Value;
+			ComponentFolderTemplateID = new TemplateID(new ID(i.Fields["Folder Template"].Value));
 			Logger = logger;
 		}
 
-		public Item[] GetImportItems(Item parent)
+		public virtual Item[] GetImportItems(Item parent)
 		{
 			var items = new List<Item>();
 			foreach(var queryLine in Query.Split(new[] { Environment.NewLine }, StringSplitOptions.None))
@@ -87,9 +91,19 @@ namespace Sitecore.SharedSource.DataImporter.Mappings.Templates {
 				{
 					return new[] {parent};
 				}
+				if (query == "../")
+				{
+					items.Add(parent.Parent);
+					continue;
+				}
 				if (query == "./")
 				{
 					items.Add(parent);
+					continue;
+				}
+				if (query == "./*")
+				{
+					items.AddRange(parent.Children);
 					continue;
 				}
 				if (query.StartsWith("./")) 
@@ -102,6 +116,52 @@ namespace Sitecore.SharedSource.DataImporter.Mappings.Templates {
 				items.AddRange(parent.Database.SelectItems(cleanQuery));
 			}
 			return items.ToArray();
+		}
+
+		public virtual Item GetFolder(Item item, Item parent, Item importRow)
+		{
+			Item folder = parent;
+			if (FolderName == "$path")
+			{
+				var folderPath = item.Paths.ParentPath.Replace(((Item)importRow).Paths.FullPath, parent.Paths.FullPath);
+				folder = parent.Database.GetItem(folderPath);
+				if (folder == null)
+				{
+					Logger.Log(string.Format("Could not find component Folder at {0}", folderPath), null, ProcessStatus.Warning);
+					folder = parent;
+				}
+
+			}
+			if (FolderName == "$parentpath")
+			{
+				folder = parent.Parent;
+			}
+			else if (!string.IsNullOrEmpty(FolderName))
+			{
+				var folderPath = parent.Paths.FullPath + "/" + FolderName;
+				folder = GetPathFolderNode(folderPath, parent);
+				if (folder == null)
+				{
+					Logger.Log(string.Format("Could not find component Folder at {0}", folderPath), null, ProcessStatus.Warning);
+					folder = parent;
+				}
+			}
+			return folder;
+		}
+		protected virtual Item GetPathFolderNode(string path, Item sourceItem)
+		{
+
+			var item = sourceItem.Database.GetItem(path);
+			if (item == null)
+			{
+				var parentPath = path.Substring(0, path.LastIndexOf("/"));
+				var itemName = path.Substring(path.LastIndexOf("/") + 1);
+				var parent = GetPathFolderNode(parentPath, sourceItem);
+				
+				item = parent.Add(itemName, ComponentFolderTemplateID);
+
+			}
+			return item;
 		}
 	}
 }

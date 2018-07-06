@@ -503,17 +503,7 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 									continue;
 								}
 							}
-							Item folder = parent;
-							if (!string.IsNullOrEmpty(componentMapping.FolderName))
-							{
-								var folderPath = parent.Paths.FullPath + "/" + componentMapping.FolderName;
-								folder = ToDB.GetItem(folderPath);
-								if (folder == null)
-								{
-									Logger.Log("SitecoreDataMap.ProcessComponents", string.Format("Could not find component Folder at {0}", folderPath));
-									folder = parent;
-								}
-							}
+							var folder = componentMapping.GetFolder(item, parent, (Item) importRow);
 
 							
 							var nItemTemplate = GetComponentItemTemplate(item, componentMapping);
