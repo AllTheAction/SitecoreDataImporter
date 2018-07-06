@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using HtmlAgilityPack;
 using Sitecore.Data;
 using Sitecore.Data.Fields;
@@ -159,10 +160,27 @@ namespace Sitecore.SharedSource.DataImporter.Mappings.Fields {
 				{
 					// see if it exists
 					string imgSrc = node.Attributes["src"].Value;
+					MediaItem mediaItem = null;
 					DynamicLink dynamicLink;
 					if (!DynamicLink.TryParse(imgSrc, out dynamicLink))
+					{
+						if (imgSrc.StartsWith("~/media"))
+						{
+
+							imgSrc = imgSrc.Replace("~/media", "sitecore/media library");
+							imgSrc = imgSrc.Replace(".ashx", " ");
+							imgSrc = HttpUtility.UrlDecode(imgSrc);
+							mediaItem = importRow.Database.GetItem(imgSrc, map.ImportToLanguage);
+						}
+					}
+					else
+					{
+						mediaItem = importRow.Database.GetItem(dynamicLink.ItemId, dynamicLink.Language ?? map.ImportToLanguage);
+					}
+					if (mediaItem == null)
+					{
 						return;
-					MediaItem mediaItem = importRow.Database.GetItem(dynamicLink.ItemId, dynamicLink.Language ?? map.ImportToLanguage);
+					}
 					var mediaParentItem = BuildMediaPath(map.ToDB, mediaItem.InnerItem.Paths.ParentPath);
 					MediaItem newImg = HandleMediaItem(map, mediaParentItem, itemPath, mediaItem);
 					if (newImg != null)
