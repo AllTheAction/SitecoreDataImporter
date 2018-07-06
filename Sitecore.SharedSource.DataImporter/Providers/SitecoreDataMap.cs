@@ -22,6 +22,7 @@ using Sitecore.Diagnostics;
 using Sitecore.Layouts;
 using Sitecore.SecurityModel;
 using Sitecore.SharedSource.DataImporter.Logger;
+using Sitecore.SharedSource.DataImporter.Mappings.Components;
 
 namespace Sitecore.SharedSource.DataImporter.Providers {
     public class SitecoreDataMap : BaseDataMap {
@@ -43,7 +44,7 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
         /// </summary>
         public static readonly string ComponentsFolderTemplateIdString = "{4E8E2F3D-2327-4BBA-A14F-C586391892CA}";
         public static readonly ID ComponentsFolderTemplateId = new ID(ComponentsFolderTemplateIdString);
-        
+
         #endregion Static IDs
 
         #region Properties
@@ -100,11 +101,11 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 
         public bool KeepOriginalItemID { get; set; }
 
-        #endregion Properties
+		#endregion Properties
 
-        #region Fields
+		#region Fields
 
-        public Language ImportFromLanguage { get; set; }
+		public Language ImportFromLanguage { get; set; }
 
         public bool RecursivelyFetchChildren { get; set; }
 		public Dictionary<string,string> PathRewrites { get; set; }
@@ -138,7 +139,7 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 			AllowItemNameMatch = ImportItem.GetItemBool("Allow Item Name Match");
             KeepOriginalItemID = ImportItem.GetItemBool("Keep Original Item ID");
 
-            PathRewrites = ImportItem.GetItemField("Path Rewrites", Logger)
+			PathRewrites = ImportItem.GetItemField("Path Rewrites", Logger)
 				.Split(new[] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries)
 				.ToDictionary(s => s.Split(';')[0], s => s.Split(';')[1]);
 		}
@@ -258,12 +259,12 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
                 ProcessChildren(ref newItem, ref row);
         }
 
-		/// <summary>
-		/// deals with the sitecore properties
-		/// </summary>
-		/// <param name="newItem"></param>
+        /// <summary>
+        /// deals with the sitecore properties
+        /// </summary>
+        /// <param name="newItem"></param>
 		/// <param name="importRow"></param>
-		public void ProcessReferenceFields(ref Item newItem, Item row, IEnumerable<IBaseFieldWithReference> referenceFieldMaps)
+        public void ProcessReferenceFields(ref Item newItem, Item row, IEnumerable<IBaseFieldWithReference> referenceFieldMaps)
 		{
 			
 
@@ -366,7 +367,7 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
         }
 
         public override Item CreateNewItem(Item parent, object importRow, string newItemName)
-        {
+		{
             CustomItemBase nItemTemplate = GetNewItemTemplate(importRow);
 			newItemName = RewritePath(newItemName);
             using (new LanguageSwitcher(ImportToLanguage))
@@ -437,11 +438,11 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 					//calls the subclass method to handle custom fields and properties
 					ProcessCustomData(ref newItem, importRow);
 				}
-
+				
 				Logger.Log("SitecoreDataMap.CreateNewItem", $"Import ID:{((Item) importRow).ID.Guid}, Import Path:{((Item)importRow).Paths.FullPath}, New ID:{newItem.ID.Guid}, New Path:{newItem.Paths.FullPath}");
 
                 return newItem;
-            }
+			}
         }
 
 		protected virtual ID GetItemID(Item importRow)
@@ -468,9 +469,9 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 				temp.Delete();
 			}
 			else
-			{
-				newItem.Delete();
-				newItem = null;
+		{
+			newItem.Delete();
+			newItem = null;
 			}
 			return newItem;
 		}
@@ -523,7 +524,7 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 								case "@@name":
 									name = item.Name;
 									break;
-								case "$outcomePostQuestionName":
+                                case "$outcomePostQuestionName":
 									var questionName = item.Name.Replace('P', 'B');
 									name = GetChild(folder, questionName) != null ? questionName: item.Name;
 									break;
@@ -550,8 +551,8 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 									newItem = ItemManager.AddFromTemplate(name, nItemTemplate.ID, folder, item.ID);
 								}
 								else
-								{
-									newItem = ItemManager.AddFromTemplate(name, nItemTemplate.ID, folder);
+								    {
+								        newItem = ItemManager.AddFromTemplate(name, nItemTemplate.ID, folder);
 								}
 							}
 
@@ -582,9 +583,9 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 							{
 								AddRendering(parent, componentMapping.Rendering, componentMapping.Placeholder, newItem);
 							}
-
+							
 							Logger.Log("SitecoreDataMap.CreateNewItem", $"Import ID:{item.ID.Guid}, Import Path:{item.Paths.FullPath}, New ID:{newItem.ID.Guid}, New Path:{newItem.Paths.FullPath}");
-                        }
+						}
 
 					}
 					catch (Exception ex)
@@ -858,9 +859,9 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 
                 if (bp != null)
                     l.Add(bp);
-                else
+				else
                     Logger.Log(child.Paths.FullPath, "the class type could not be instantiated", ProcessStatus.ImportDefinitionError, "Handler Class", bm.HandlerClass);
-            }
+			}
 
             return l;
         }
@@ -933,9 +934,41 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
             ChildList c = Temps.GetChildren();
             foreach (Item child in c)
             {
-                //create an item to get the class / assembly name from
-                ComponentMapping tm = new ComponentMapping(child, Logger);
-                tm.FieldDefinitions = GetFieldDefinitions(child);
+				//create an item to get the class / assembly name from 
+				BaseMapping bm = new BaseMapping(child, Logger);
+
+				//check for assembly
+				if (string.IsNullOrEmpty(bm.HandlerAssembly))
+				{
+					Logger.Log(string.Format("the field's Handler Assembly is not defined on item {0}: {1}", child.Paths.FullPath, bm.HandlerAssembly), child.ID.ToString(), ProcessStatus.ImportDefinitionError);
+					continue;
+				}
+
+				//check for class
+				if (string.IsNullOrEmpty(bm.HandlerClass))
+				{
+					Logger.Log(string.Format("the field's Handler Class is not defined on item {0}: {1}", child.Paths.FullPath, bm.HandlerClass), child.ID.ToString(), ProcessStatus.ImportDefinitionError);
+					continue;
+				}
+
+				//create the object from the class and cast as base field to add it to field definitions
+				ComponentMapping tm = null;
+				try
+				{
+					tm = (ComponentMapping)Sitecore.Reflection.ReflectionUtil.CreateObject(bm.HandlerAssembly, bm.HandlerClass, new object[] { child, Logger });
+				}
+				catch (FileNotFoundException)
+				{
+					Logger.Log(string.Format("the field's binary specified could not be found on item {0} : {1}", child.Paths.FullPath, bm.HandlerAssembly), child.ID.ToString(), ProcessStatus.ImportDefinitionError);
+					continue;
+				}
+				if (tm == null)
+				{
+					Logger.Log(string.Format("the field's class type could not be instantiated {0} :{1}", child.Paths.FullPath, bm.HandlerClass), child.ID.ToString(), ProcessStatus.ImportDefinitionError);
+					continue;
+				}
+				
+				tm.FieldDefinitions = GetFieldDefinitions(child);
 				tm.ReferenceFieldDefinitions = GetReferenceFieldDefinitions(child);
 				tm.PropertyDefinitions = GetPropDefinitions(child);
 				tm.TemplateMappingDefinitions = GetTemplateDefinitions(child);
@@ -1046,7 +1079,7 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 
         #endregion Methods
 
-		
+
 		private void UpdateReferences(Item oldItem, ID newId) {
 			var links = Sitecore.Globals.LinkDatabase.GetItemReferrers(oldItem, true);
 			using (new Sitecore.SecurityModel.SecurityDisabler())
