@@ -935,7 +935,7 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
             foreach (Item child in c)
             {
 				//create an item to get the class / assembly name from 
-				BaseMapping bm = new BaseMapping(child, Logger);
+				BaseMapping bm = new BaseMapping(child);
 
 				//check for assembly
 				if (string.IsNullOrEmpty(bm.HandlerAssembly))
