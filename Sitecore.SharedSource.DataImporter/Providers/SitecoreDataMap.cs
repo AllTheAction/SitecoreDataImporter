@@ -340,9 +340,9 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
             List<IBaseField> tempFields = tm.FieldDefinitions;
 
             //filter duplicates in template fields from global fields
-            List<string> names = tempFields.Select(a => a.Name).ToList();
+            List<string> names = tempFields.Select(a => a.ItemName()).ToList();
             l.AddRange(tempFields);
-            l.AddRange(FieldDefinitions.Where(a => !names.Contains(a.Name)));
+            l.AddRange(FieldDefinitions.Where(a => !names.Contains(a.ItemName())));
 
             return l;
         }
@@ -731,9 +731,9 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
             List<IBaseProperty> tempProps = tm.PropertyDefinitions;
 
             //filter duplicates in template fields from global fields
-            List<string> names = tempProps.Select(a => a.Name).ToList();
+            List<string> names = tempProps.Select(a => a.ItemName()).ToList();
             l.AddRange(tempProps);
-            l.AddRange(PropertyDefinitions.Where(a => !names.Contains(a.Name)));
+            l.AddRange(PropertyDefinitions.Where(a => !names.Contains(a.ItemName())));
             
             return l;
         }
@@ -749,9 +749,9 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 			List<IBaseProperty> tempProps = tm.PropertyDefinitions;
 
 			//filter duplicates in template fields from global fields
-			List<string> names = tempProps.Select(a => a.Name).ToList();
+			List<string> names = tempProps.Select(a => a.ItemName()).ToList();
 			l.AddRange(tempProps);
-			l.AddRange(mapping.PropertyDefinitions.Where(a => !names.Contains(a.Name)));
+			l.AddRange(mapping.PropertyDefinitions.Where(a => !names.Contains(a.ItemName())));
 
 			return l;
 		}
@@ -767,9 +767,9 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
             List<IBaseFieldWithReference> tempProps = tm.ReferenceFieldDefinitions;
 
             //filter duplicates in template fields from global fields
-            List<string> names = tempProps.Select(a => a.Name).ToList();
+            List<string> names = tempProps.Select(a => a.ItemName()).ToList();
             l.AddRange(tempProps);
-            l.AddRange(ReferenceFieldDefinitions.Where(a => !names.Contains(a.Name)));
+            l.AddRange(ReferenceFieldDefinitions.Where(a => !names.Contains(a.ItemName())));
 
             return l;
         }
@@ -785,9 +785,9 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 			List<IBaseFieldWithReference> tempProps = tm.ReferenceFieldDefinitions;
 
 			//filter duplicates in template fields from global fields
-			List<string> names = tempProps.Select(a => a.Name).ToList();
+			List<string> names = tempProps.Select(a => a.ItemName()).ToList();
 			l.AddRange(tempProps);
-			l.AddRange(mapping.ReferenceFieldDefinitions.Where(a => !names.Contains(a.Name)));
+			l.AddRange(mapping.ReferenceFieldDefinitions.Where(a => !names.Contains(a.ItemName())));
 
 			return l;
 		}
@@ -802,9 +802,9 @@ namespace Sitecore.SharedSource.DataImporter.Providers {
 			List<IBaseField> tempProps = tm.FieldDefinitions;
 
 			//filter duplicates in template fields from global fields
-			List<string> names = tempProps.Select(a => a.Name).ToList();
+			List<string> names = tempProps.Select(a => a.ItemName()).ToList();
 			l.AddRange(tempProps);
-			l.AddRange(mapping.FieldDefinitions.Where(a => !names.Contains(a.Name)));
+			l.AddRange(mapping.FieldDefinitions.Where(a => !names.Contains(a.ItemName())));
 
 			return l;
 		}
